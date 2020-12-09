@@ -2,8 +2,20 @@
 
 all: clean build init plan apply
 
+start-nomad:
+	systemd-run --user --unit local-development-nomad /usr/bin/nomad agent -dev
+
+stop-nomad:
+	systemctl --user stop local-development-nomad
+
+restart-nomad:
+	systemctl --user restart local-development-nomad
+
+logs-nomad:
+	journalctl --user --follow --unit local-development-nomad
+
 clean:
-	rm -rf .terraform.lock.hcl .terraform/
+	rm -rf .terraform.lock.hcl .terraform/ *.tfstate*
 	rm -rf ~/.terraform.d/local/adriennecohea/nomadutility
 
 build:
