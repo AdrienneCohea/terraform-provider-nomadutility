@@ -1,2 +1,4 @@
 *.tfstate*
+.terraform.lock.hcl
 terraform-provider-nomadutility
+*.log
