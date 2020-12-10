@@ -3,7 +3,7 @@
 all: clean build init plan apply
 
 start-nomad:
-	systemd-run --user --unit local-development-nomad /usr/bin/nomad agent -dev
+	systemd-run --user --unit local-development-nomad /usr/bin/nomad agent -dev -acl-enabled
 
 stop-nomad:
 	systemctl --user stop local-development-nomad
