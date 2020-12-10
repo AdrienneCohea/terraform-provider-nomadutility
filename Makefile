@@ -16,7 +16,7 @@ logs-nomad:
 
 clean:
 	rm -rf .terraform.lock.hcl .terraform/ *.tfstate*
-	rm -rf ~/.terraform.d/local/adriennecohea/nomadutility
+	rm -rf ~/.terraform.d/local/adriennecohea/nomadutility dist/
 
 build:
 	go build
