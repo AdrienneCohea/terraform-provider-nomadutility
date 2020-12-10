@@ -12,7 +12,6 @@ func aclBootstrap() *schema.Resource {
 	return &schema.Resource{
 		Create: bootstrapACLs,
 		Read:   doNothing,
-		Update: doNothing,
 		Delete: forget,
 
 		Schema: map[string]*schema.Schema{
