@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/nomad/api"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -63,25 +64,26 @@ func aclBootstrap() *schema.Resource {
 }
 
 func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*api.Client)
+	return backoff.Retry(func() error {
+		client := meta.(*api.Client)
 
-	log.Println("[DEBUG] Bootstrapping ACL system")
-	resp, _, err := client.ACLTokens().Bootstrap(nil)
-	if err != nil {
-		return fmt.Errorf("unable to bootstrap ACL system: %s", err.Error())
-	}
-	log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
-	d.SetId(resp.AccessorID)
+		resp, _, err := client.ACLTokens().Bootstrap(nil)
+		if err != nil {
+			return fmt.Errorf("unable to bootstrap ACL system: %s", err.Error())
+		}
+		log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
+		d.SetId(resp.AccessorID)
 
-	d.Set("accessor_id", resp.AccessorID)
-	d.Set("secret_id", resp.SecretID)
-	d.Set("name", resp.Name)
-	d.Set("type", resp.Type)
-	d.Set("policies", resp.Policies)
-	d.Set("global", resp.Global)
-	d.Set("create_time", resp.CreateTime.UTC().String())
+		d.Set("accessor_id", resp.AccessorID)
+		d.Set("secret_id", resp.SecretID)
+		d.Set("name", resp.Name)
+		d.Set("type", resp.Type)
+		d.Set("policies", resp.Policies)
+		d.Set("global", resp.Global)
+		d.Set("create_time", resp.CreateTime.UTC().String())
 
-	return nil
+		return nil
+	}, backoff.NewExponentialBackOff())
 }
 
 func forget(d *schema.ResourceData, m interface{}) error {
