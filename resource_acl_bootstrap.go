@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
-	"log"
+  "log"
+  "strings"
 
-	backoff "github.com/cenkalti/backoff/v4"
-	"github.com/hashicorp/nomad/api"
-	"github.com/hashicorp/terraform/helper/schema"
+  backoff "github.com/cenkalti/backoff/v4"
+  "github.com/hashicorp/nomad/api"
+  "github.com/hashicorp/terraform/helper/schema"
 )
 
 func aclBootstrap() *schema.Resource {
@@ -69,9 +69,12 @@ func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
 
 		resp, _, err := client.ACLTokens().Bootstrap(nil)
 		if err != nil {
-			return fmt.Errorf("unable to bootstrap ACL system: %s", err.Error())
-		}
-		log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
+      if isPermanentError(err) {
+        return backoff.Permanent(err)
+      }
+      return err
+    }
+    log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
 		d.SetId(resp.AccessorID)
 
 		d.Set("accessor_id", resp.AccessorID)
@@ -93,4 +96,17 @@ func forget(d *schema.ResourceData, m interface{}) error {
 
 func doNothing(d *schema.ResourceData, m interface{}) error {
 	return nil
+}
+
+func isPermanentError(err error) bool {
+  permanentErrors := []string{
+    "bootstrap already done",
+    "x509",
+  }
+  for _, errorSubstring := range permanentErrors {
+    if strings.Contains(err.Error(), errorSubstring) {
+      return true
+    }
+  }
+  return false
 }
