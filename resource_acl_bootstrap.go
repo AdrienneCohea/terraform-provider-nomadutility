@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"strings"
+	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/nomad/api"
@@ -64,17 +65,19 @@ func aclBootstrap() *schema.Resource {
 }
 
 func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
+	b := backoff.NewExponentialBackOff()
+	b.InitialInterval = 2 * time.Second
+	b.MaxInterval = 30 * time.Second
+	b.MaxElapsedTime = 10 * time.Minute
+
 	return backoff.Retry(func() error {
 		client := meta.(*api.Client)
 
 		resp, _, err := client.ACLTokens().Bootstrap(nil)
 		if err != nil {
-			if strings.Contains(err.Error(), "i/o timeout") {
-				return err
-			} else {
-				return backoff.Permanent(err)
-			}
+			return maybeRetry(err)
 		}
+
 		log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
 		d.SetId(resp.AccessorID)
 
@@ -87,7 +90,7 @@ func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
 		_ = d.Set("create_time", resp.CreateTime.UTC().String())
 
 		return nil
-	}, backoff.NewExponentialBackOff())
+	}, b)
 }
 
 func forget(d *schema.ResourceData, m interface{}) error {
@@ -97,4 +100,28 @@ func forget(d *schema.ResourceData, m interface{}) error {
 
 func doNothing(d *schema.ResourceData, m interface{}) error {
 	return nil
+}
+
+func isNetworkError(err error) bool {
+	networkErrors := []string{
+		"i/o timeout",
+		"connection refused",
+		"EOF",
+	}
+
+	for _, e := range networkErrors {
+		if strings.Contains(err.Error(), e) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func maybeRetry(err error) error {
+	if isNetworkError(err) {
+		return err
+	}
+
+	return backoff.Permanent(err)
 }
