@@ -10,9 +10,40 @@ func aclBootstrap() *schema.Resource {
 	return &schema.Resource{
 		Create: bootstrapACLs,
 		Read:   noop,
+		Update: noop,
 		Delete: forget,
 
 		Schema: map[string]*schema.Schema{
+			"address": {
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("NOMAD_ADDR", "http://127.0.0.1:4646"),
+				Description: "URL of the root of the target Nomad agent.",
+			},
+			"ca_file": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("NOMAD_CACERT", ""),
+				Description: "A path to a PEM-encoded certificate authority used to verify the remote agent's certificate.",
+			},
+			"cert_file": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("NOMAD_CLIENT_CERT", ""),
+				Description: "A path to a PEM-encoded certificate provided to the remote agent; requires use of key_file.",
+			},
+			"key_file": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("NOMAD_CLIENT_KEY", ""),
+				Description: "A path to a PEM-encoded private key, required if cert_file is specified.",
+			},
+			"tls_server_name": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				DefaultFunc: schema.EnvDefaultFunc("NOMAD_CLIENT_KEY", ""),
+				Description: "Specifies an optional string used to set the SNI host when connecting to Vault via TLS.",
+			},
 			"accessor_id": {
 				Description: "Nomad-generated ID for this token.",
 				Computed:    true,
@@ -62,9 +93,10 @@ func aclBootstrap() *schema.Resource {
 
 func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
 	c := meta.(*Config)
+	client := getClient(d)
 
 	return backoff.Retry(func() error {
-		resp, _, err := c.client.ACLTokens().Bootstrap(nil)
+		resp, _, err := client.ACLTokens().Bootstrap(nil)
 		if err != nil {
 			return maybeRetry(err)
 		}

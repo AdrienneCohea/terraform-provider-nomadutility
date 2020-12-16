@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/hashicorp/nomad/api"
 	"github.com/hashicorp/terraform/helper/schema"
 	"time"
 )
@@ -23,4 +24,19 @@ func MustDuration(dur string) time.Duration {
 		panic(err)
 	}
 	return actual
+}
+
+func getClient(d *schema.ResourceData) *api.Client {
+	conf := api.DefaultConfig()
+	conf.Address = d.Get("address").(string)
+	conf.TLSConfig.CACert = d.Get("ca_file").(string)
+	conf.TLSConfig.ClientCert = d.Get("cert_file").(string)
+	conf.TLSConfig.ClientKey = d.Get("key_file").(string)
+	conf.TLSConfig.TLSServerName = d.Get("tls_server_name").(string)
+
+	client, err := api.NewClient(conf)
+	if err != nil {
+		panic(err)
+	}
+	return client
 }
