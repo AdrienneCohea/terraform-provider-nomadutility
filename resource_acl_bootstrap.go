@@ -2,10 +2,9 @@ package main
 
 import (
 	"log"
-	"strings"
 	"time"
 
-	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/nomad/api"
 	"github.com/hashicorp/terraform/helper/schema"
 )
@@ -95,33 +94,12 @@ func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
 
 func forget(d *schema.ResourceData, m interface{}) error {
 	d.SetId("")
+	_ = m
 	return nil
 }
 
 func doNothing(d *schema.ResourceData, m interface{}) error {
+	_ = d
+	_ = m
 	return nil
-}
-
-func isNetworkError(err error) bool {
-	networkErrors := []string{
-		"i/o timeout",
-		"connection refused",
-		"EOF",
-	}
-
-	for _, e := range networkErrors {
-		if strings.Contains(err.Error(), e) {
-			return true
-		}
-	}
-
-	return false
-}
-
-func maybeRetry(err error) error {
-	if isNetworkError(err) {
-		return err
-	}
-
-	return backoff.Permanent(err)
 }
