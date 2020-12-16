@@ -4,7 +4,6 @@ import (
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/nomad/api"
 	"github.com/hashicorp/terraform/helper/schema"
-	"time"
 )
 
 //Provider defines the schema and resource map
@@ -41,6 +40,24 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("NOMAD_CLIENT_KEY", ""),
 				Description: "Specifies an optional string used to set the SNI host when connecting to Vault via TLS.",
 			},
+			"initial_backoff_interval": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "2s",
+				Description: "Specifies an initial backoff interval for retries.",
+			},
+			"max_backoff_interval": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "30s",
+				Description: "Specifies an maximum backoff interval for retries.",
+			},
+			"timeout": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Default:     "10m",
+				Description: "Specifies an upper bound on the time spent waiting for the ACLs to bootstrap before failing.",
+			},
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -65,9 +82,9 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	}
 
 	b := backoff.NewExponentialBackOff()
-	b.InitialInterval = 2 * time.Second
-	b.MaxInterval = 30 * time.Second
-	b.MaxElapsedTime = 10 * time.Minute
+	b.InitialInterval = MustDuration(d.Get("initial_backoff_interval").(string))
+	b.MaxInterval = MustDuration(d.Get("max_backoff_interval").(string))
+	b.MaxElapsedTime = MustDuration(d.Get("timeout").(string))
 
 	return Config{
 		retryBackoff: b,
