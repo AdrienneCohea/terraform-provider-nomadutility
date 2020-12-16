@@ -6,14 +6,14 @@ import (
 	"strings"
 )
 
-func isNetworkError(err error) bool {
-	networkErrors := []string{
-		"i/o timeout",
-		"connection refused",
-		"EOF",
-	}
+var retryableErrors = []string{
+	"i/o timeout",
+	"connection refused",
+	"EOF",
+}
 
-	for _, e := range networkErrors {
+func isRetryable(err error) bool {
+	for _, e := range retryableErrors {
 		if strings.Contains(err.Error(), e) {
 			return true
 		}
@@ -23,7 +23,7 @@ func isNetworkError(err error) bool {
 }
 
 func maybeRetry(err error) error {
-	if isNetworkError(err) {
+	if isRetryable(err) {
 		return err
 	}
 
@@ -33,7 +33,9 @@ func maybeRetry(err error) error {
 func collectErrorStrings(errors []error) []string {
 	str := make([]string, 0)
 	for _, e := range errors {
-		str = append(str, e.Error())
+		if e != nil {
+			str = append(str, e.Error())
+		}
 	}
 	return str
 }

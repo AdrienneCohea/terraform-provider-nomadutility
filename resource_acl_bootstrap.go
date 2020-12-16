@@ -61,7 +61,7 @@ func aclBootstrap() *schema.Resource {
 }
 
 func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
-	c := meta.(Config)
+	c := meta.(*Config)
 
 	return backoff.Retry(func() error {
 		resp, _, err := c.client.ACLTokens().Bootstrap(nil)

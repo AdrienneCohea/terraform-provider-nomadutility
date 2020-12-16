@@ -43,8 +43,14 @@ func Provider() *schema.Provider {
 			"initial_backoff_interval": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Default:     "2s",
+				Default:     "500ms",
 				Description: "Specifies an initial backoff interval for retries.",
+			},
+			"backoff_multiplier": {
+				Type:        schema.TypeFloat,
+				Optional:    true,
+				Default:     1.5,
+				Description: "Specifies an multiplier for each wait time between retries.",
 			},
 			"max_backoff_interval": {
 				Type:        schema.TypeString,
@@ -83,10 +89,11 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 
 	b := backoff.NewExponentialBackOff()
 	b.InitialInterval = MustDuration(d.Get("initial_backoff_interval").(string))
+	b.Multiplier = d.Get("backoff_multiplier").(float64)
 	b.MaxInterval = MustDuration(d.Get("max_backoff_interval").(string))
 	b.MaxElapsedTime = MustDuration(d.Get("timeout").(string))
 
-	return Config{
+	return &Config{
 		retryBackoff: b,
 		client:       client,
 	}, nil
