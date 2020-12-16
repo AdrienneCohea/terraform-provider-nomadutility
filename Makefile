@@ -3,16 +3,7 @@
 all: clean build init plan apply
 
 start-nomad:
-	systemd-run --user --unit local-development-nomad /usr/bin/nomad agent -dev -acl-enabled
-
-stop-nomad:
-	systemctl --user stop local-development-nomad
-
-restart-nomad:
-	systemctl --user restart local-development-nomad
-
-logs-nomad:
-	journalctl --user --follow --unit local-development-nomad
+	systemd-run --user /usr/bin/nomad agent -dev -acl-enabled
 
 clean:
 	rm -rf .terraform.lock.hcl .terraform/ *.tfstate*

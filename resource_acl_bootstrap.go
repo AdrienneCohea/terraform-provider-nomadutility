@@ -1,18 +1,15 @@
 package main
 
 import (
-	"log"
-	"time"
-
-	"github.com/cenkalti/backoff/v4"
-	"github.com/hashicorp/nomad/api"
-	"github.com/hashicorp/terraform/helper/schema"
+  "github.com/cenkalti/backoff/v4"
+  "github.com/hashicorp/terraform/helper/schema"
+  "log"
 )
 
 func aclBootstrap() *schema.Resource {
 	return &schema.Resource{
 		Create: bootstrapACLs,
-		Read:   doNothing,
+		Read:   noop,
 		Delete: forget,
 
 		Schema: map[string]*schema.Schema{
@@ -64,20 +61,16 @@ func aclBootstrap() *schema.Resource {
 }
 
 func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
-	b := backoff.NewExponentialBackOff()
-	b.InitialInterval = 2 * time.Second
-	b.MaxInterval = 30 * time.Second
-	b.MaxElapsedTime = 10 * time.Minute
+  c := meta.(Config)
 
 	return backoff.Retry(func() error {
-		client := meta.(*api.Client)
-
-		resp, _, err := client.ACLTokens().Bootstrap(nil)
+		resp, _, err := c.client.ACLTokens().Bootstrap(nil)
 		if err != nil {
 			return maybeRetry(err)
 		}
 
-		log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
+    log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
+
 		d.SetId(resp.AccessorID)
 
 		_ = d.Set("accessor_id", resp.AccessorID)
@@ -88,18 +81,8 @@ func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
 		_ = d.Set("global", resp.Global)
 		_ = d.Set("create_time", resp.CreateTime.UTC().String())
 
+    log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
+
 		return nil
-	}, b)
-}
-
-func forget(d *schema.ResourceData, m interface{}) error {
-	d.SetId("")
-	_ = m
-	return nil
-}
-
-func doNothing(d *schema.ResourceData, m interface{}) error {
-	_ = d
-	_ = m
-	return nil
+	}, c.retryBackoff)
 }
