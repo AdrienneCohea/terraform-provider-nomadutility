@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/cenkalti/backoff/v4"
 	"strings"
 )
@@ -27,4 +28,18 @@ func maybeRetry(err error) error {
 	}
 
 	return backoff.Permanent(err)
+}
+
+func collectErrorStrings(errors []error) []string {
+	str := make([]string, 0)
+	for _, e := range errors {
+		str = append(str, e.Error())
+	}
+	return str
+}
+
+func multiError(errors ...error) error {
+	collected := collectErrorStrings(errors)
+
+	return fmt.Errorf("%d errors: %s", len(collected), strings.Join(collected, ", "))
 }

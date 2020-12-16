@@ -1,9 +1,9 @@
 package main
 
 import (
-  "github.com/cenkalti/backoff/v4"
-  "github.com/hashicorp/terraform/helper/schema"
-  "log"
+	"github.com/cenkalti/backoff/v4"
+	"github.com/hashicorp/terraform/helper/schema"
+	"log"
 )
 
 func aclBootstrap() *schema.Resource {
@@ -61,7 +61,7 @@ func aclBootstrap() *schema.Resource {
 }
 
 func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
-  c := meta.(Config)
+	c := meta.(Config)
 
 	return backoff.Retry(func() error {
 		resp, _, err := c.client.ACLTokens().Bootstrap(nil)
@@ -69,20 +69,21 @@ func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
 			return maybeRetry(err)
 		}
 
-    log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
+		log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
 
 		d.SetId(resp.AccessorID)
 
-		_ = d.Set("accessor_id", resp.AccessorID)
-		_ = d.Set("secret_id", resp.SecretID)
-		_ = d.Set("name", resp.Name)
-		_ = d.Set("type", resp.Type)
-		_ = d.Set("policies", resp.Policies)
-		_ = d.Set("global", resp.Global)
-		_ = d.Set("create_time", resp.CreateTime.UTC().String())
+		err = multiError(
+			d.Set("accessor_id", resp.AccessorID),
+			d.Set("secret_id", resp.SecretID),
+			d.Set("name", resp.Name),
+			d.Set("type", resp.Type),
+			d.Set("policies", resp.Policies),
+			d.Set("global", resp.Global),
+			d.Set("create_time", resp.CreateTime.UTC().String()))
 
-    log.Printf("[DEBUG] Created ACL token %q", resp.AccessorID)
+		log.Printf("[DEBUG] Saved ACL token in state %q", resp.AccessorID)
 
-		return nil
+		return err
 	}, c.retryBackoff)
 }
