@@ -44,5 +44,9 @@ func collectErrorStrings(errors []error) []string {
 func multiError(errors ...error) error {
 	collected := collectErrorStrings(errors)
 
-	return fmt.Errorf("%d errors: %s", len(collected), strings.Join(collected, ", "))
+	if len(collected) > 0 {
+		return fmt.Errorf("%d errors: %s", len(collected), strings.Join(collected, ", "))
+	}
+
+	return nil
 }

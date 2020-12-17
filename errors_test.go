@@ -34,3 +34,33 @@ func Test_isRetryable_negativeCases(t *testing.T) {
 		assert.False(t, isRetryable(e))
 	}
 }
+
+func Test_multiError_withTwoErrors(t *testing.T) {
+	expected := fmt.Errorf("2 errors: first, second")
+
+	actual := multiError(
+		fmt.Errorf("first"),
+		fmt.Errorf("second"))
+
+	assert.EqualValues(t, expected, actual)
+}
+
+func Test_multiError_withOneError(t *testing.T) {
+	expected := fmt.Errorf("1 errors: second")
+
+	actual := multiError(nil, fmt.Errorf("second"))
+
+	assert.EqualValues(t, expected, actual)
+}
+
+func Test_multiError_withNoErrors(t *testing.T) {
+	assert.NoError(t, multiError(nil, nil))
+}
+
+func Test_multiError_withNoErrorsOneArg(t *testing.T) {
+	assert.NoError(t, multiError(nil))
+}
+
+func Test_multiError_withNoArgs(t *testing.T) {
+	assert.NoError(t, multiError())
+}
