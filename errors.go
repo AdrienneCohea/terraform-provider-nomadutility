@@ -10,6 +10,7 @@ var retryableErrors = []string{
 	"i/o timeout",
 	"connection refused",
 	"EOF",
+	"No cluster leader",
 }
 
 func isRetryable(err error) bool {
