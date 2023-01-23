@@ -26,6 +26,11 @@ func aclBootstrap() *schema.Resource {
 				DefaultFunc: schema.EnvDefaultFunc("NOMAD_CACERT", ""),
 				Description: "A path to a PEM-encoded certificate authority used to verify the remote agent's certificate.",
 			},
+			"ca_pem": {
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "PEM-encoded certificate authority used to verify the remote agent's certificate.",
+			},
 			"cert_file": {
 				Type:        schema.TypeString,
 				Optional:    true,

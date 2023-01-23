@@ -2,14 +2,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/cenkalti/backoff/v4"
 	"strings"
+
+	"github.com/cenkalti/backoff/v4"
 )
 
 var retryableErrors = []string{
 	"i/o timeout",
 	"connection refused",
 	"EOF",
+	"no such host",
 	"No cluster leader",
 }
 
