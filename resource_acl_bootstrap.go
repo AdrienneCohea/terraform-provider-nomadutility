@@ -1,9 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"log"
+	"strings"
+
 	"github.com/cenkalti/backoff/v4"
 	"github.com/hashicorp/terraform/helper/schema"
-	"log"
 )
 
 func aclBootstrap() *schema.Resource {
@@ -12,6 +15,9 @@ func aclBootstrap() *schema.Resource {
 		Read:   noop,
 		Update: noop,
 		Delete: forget,
+		Importer: &schema.ResourceImporter{
+			State: importState,
+		},
 
 		Schema: map[string]*schema.Schema{
 			"address": {
@@ -123,4 +129,15 @@ func bootstrapACLs(d *schema.ResourceData, meta interface{}) error {
 
 		return err
 	}, c.retryBackoff)
+}
+
+func importState(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	// id will be set by the user in the format accessor_id:secret_id
+	parts := strings.Split(d.Id(), ":")
+	if len(parts) != 2 {
+		return nil, fmt.Errorf("invalid id, expected accessor_id:secret_id")
+	}
+	d.Set("accessor_id", parts[0])
+	d.Set("secret_id", parts[1])
+	return []*schema.ResourceData{d}, nil
 }
