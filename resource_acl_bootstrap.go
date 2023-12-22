@@ -22,7 +22,7 @@ func aclBootstrap() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"address": {
 				Type:        schema.TypeString,
-				Required:    true,
+				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("NOMAD_ADDR", "http://127.0.0.1:4646"),
 				Description: "URL of the root of the target Nomad agent.",
 			},
